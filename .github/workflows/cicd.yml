@@ -1,5 +1,6 @@
 name: Angular CI/CD
 
+# Cuando se ejecuta
 on:
   pull_request:
     branches: [main]
@@ -7,6 +8,7 @@ on:
     branches: [main]
 
 jobs:
+  # Integracion continua
   build:
     runs-on: ubuntu-latest
 
@@ -28,4 +30,28 @@ jobs:
 
       - name: Compilar Angular
         run: npx ng build --base-href /cicd-angular/
-        
+
+      - name: Subir artefacto
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/cicd-angular/browser
+
+  # Despliegue continuo
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Publicar pagina web
+        id: deployment
+        uses: actions/deploy-pages@v4
